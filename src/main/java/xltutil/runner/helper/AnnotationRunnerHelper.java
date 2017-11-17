@@ -238,7 +238,8 @@ public final class AnnotationRunnerHelper
             {
                 final String pathToBrowser = XltProperties.getInstance().getProperty(XltPropertyKey.FIREFOX_PATH);
                 final FirefoxBinary binary = createFirefoxBinary(pathToBrowser);
-                return new FirefoxDriver(binary, null, capabilities);
+                capabilities.setCapability(FirefoxDriver.BINARY, binary);
+                return new FirefoxDriver(capabilities);
             }
             else if (internetExplorerBrowsers.contains(browserName))
             {

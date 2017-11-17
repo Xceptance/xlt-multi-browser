@@ -31,7 +31,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import com.xceptance.xlt.api.data.DataSetProvider;
 import com.xceptance.xlt.api.data.DataSetProviderException;
 import com.xceptance.xlt.api.engine.Session;
-import com.xceptance.xlt.api.engine.scripting.AbstractScriptTestCase;
+import com.xceptance.xlt.api.tests.AbstractWebDriverTestCase;
 import com.xceptance.xlt.api.util.XltLogger;
 import com.xceptance.xlt.api.util.XltProperties;
 import com.xceptance.xlt.engine.data.DataSetProviderFactory;
@@ -115,6 +115,11 @@ public class AnnotationRunner extends XltTestRunner
     private final List<FrameworkMethod> methods = new ArrayList<FrameworkMethod>();
 
     /**
+     * The instance of the test class for current test method.
+     */
+    private Object testInstance;
+
+    /**
      * Sets the test instance up.
      *
      * @param method
@@ -124,7 +129,7 @@ public class AnnotationRunner extends XltTestRunner
      */
     protected void setUpTest(final FrameworkMethod method, final Object test)
     {
-        if (test instanceof AbstractScriptTestCase)
+        if (test instanceof AbstractWebDriverTestCase)
         {
             // set the test data set at the test instance
             final AnnotatedFrameworkMethod frameworkMethod = (AnnotatedFrameworkMethod) method;
@@ -142,18 +147,37 @@ public class AnnotationRunner extends XltTestRunner
             {
                 throw new RuntimeException("An error occured during URL creation. See nested exception.", e);
             }
+
             if (driver != null)
             {
                 // set browser window size
                 AnnotationRunnerHelper.setBrowserWindowSize(config, driver);
-                ((AbstractScriptTestCase) test).setWebDriver(driver);
-                ((AbstractScriptTestCase) test).setTestDataSet(frameworkMethod.getDataSet());
+                ((AbstractWebDriverTestCase) test).setWebDriver(driver);
+                ((AbstractWebDriverTestCase) test).setTestDataSet(frameworkMethod.getDataSet());
+
+                testInstance = test;
             }
             else
             {
                 throw new RuntimeException("Could not create driver for browsertag: " + config.getConfigTag()
                                            + ". Please check your browserconfigurations.");
             }
+        }
+    }
+
+    /**
+     * Sets the test instance up.
+     *
+     * @param test
+     *            the test instance
+     */
+    protected void tearDownTest(final Object test)
+    {
+        if (test instanceof AbstractWebDriverTestCase)
+        {
+            ((AbstractWebDriverTestCase) test).getWebDriver().quit();
+
+            testInstance = null;
         }
     }
 
@@ -164,7 +188,8 @@ public class AnnotationRunner extends XltTestRunner
     }
 
     public AnnotationRunner(final Class<?> testCaseClass, final String testCaseName, final String defaultTestMethodName,
-        final List<File> dataSetFileDirs) throws Throwable
+        final List<File> dataSetFileDirs)
+        throws Throwable
     {
         super(testCaseClass);
 
@@ -313,6 +338,34 @@ public class AnnotationRunner extends XltTestRunner
 
         // the real job is done here
         return super.methodInvoker(method, test);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Statement methodBlock(FrameworkMethod method)
+    {
+        final Statement originalStatement = super.methodBlock(method);
+
+        // return an intermediate statement that wraps the original statement
+        return new Statement()
+        {
+            @Override
+            public void evaluate() throws Throwable
+            {
+                try
+                {
+                    // the real job is done here
+                    originalStatement.evaluate();
+                }
+                finally
+                {
+                    // quit browser
+                    tearDownTest(testInstance);
+                }
+            }
+        };
     }
 
     /**
