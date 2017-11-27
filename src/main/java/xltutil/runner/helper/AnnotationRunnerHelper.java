@@ -34,6 +34,8 @@ import org.openqa.selenium.remote.HttpCommandExecutor;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
 import com.xceptance.xlt.api.util.XltProperties;
+import com.xceptance.xlt.api.webdriver.XltChromeDriver;
+import com.xceptance.xlt.api.webdriver.XltFirefoxDriver;
 import com.xceptance.xlt.engine.SessionImpl;
 
 import xltutil.annotation.TestTargets;
@@ -231,18 +233,32 @@ public final class AnnotationRunnerHelper
                     final ChromeOptions options = new ChromeOptions();
                     options.setBinary(pathToBrowser);
                     capabilities.setCapability(ChromeOptions.CAPABILITY, options);
-                }     
-                return new ChromeDriver(capabilities);
+                }
+                
+                if(config.isClientperformanceEnabled())
+                {
+                	return new XltChromeDriver(capabilities);
+                }else
+                {
+                	return new ChromeDriver(capabilities);
+                }
             }
             else if (firefoxBrowsers.contains(browserName))
             {
                 final String pathToBrowser = XltProperties.getInstance().getProperty(XltPropertyKey.FIREFOX_PATH);
                 final FirefoxBinary binary = createFirefoxBinary(pathToBrowser);
                 capabilities.setCapability(FirefoxDriver.BINARY, binary);
-                return new FirefoxDriver(capabilities);
+                
+                if(config.isClientperformanceEnabled())
+                {
+                	return new XltFirefoxDriver(capabilities);
+                }else
+                {
+                	return new FirefoxDriver(capabilities);
+                }
             }
             else if (internetExplorerBrowsers.contains(browserName))
-            {
+            {            	
                 return new InternetExplorerDriver(capabilities);
             }
         }

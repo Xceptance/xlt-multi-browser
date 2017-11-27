@@ -56,8 +56,19 @@ xlt.webDriver.reuseDriver = true
 # .name: is a more detailed name of this browser/device test 
 #
 # .browser: determines what browser will be used for this test.
-#          valid values = iphone, ipad, android, firefox, chrome, internetexplorer, 
-#          safari
+#          valid values = iphone 
+#                         ipad 
+#                         android
+#                         firefox
+#                         firefox_clientperformance
+#                         chrome
+#                         chrome_clientperformance
+#                         internetexplorer
+#                         safari
+#
+#      *Note: The "_clientperformance" versions are extended WebDriver's with the
+#             ability to collect performance data during the execution. Additionally
+#             the ResultBrowser will show some request details.  
 #
 # .version: determines which version of the browser should be used OR 
 #           determines the version of the OS of an emulated device

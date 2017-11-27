@@ -48,6 +48,7 @@ public class PropertiesToBrowserConfigurationMapper implements IMapper<Map<Strin
         DesiredCapabilities capabilities;
 
         String emulatedBrowser = o.get(BROWSER);
+        boolean clientperformanceEnabled = false;
         if (emulatedBrowser != null)
             emulatedBrowser = emulatedBrowser.toLowerCase();
 
@@ -67,9 +68,19 @@ public class PropertiesToBrowserConfigurationMapper implements IMapper<Map<Strin
         {
             capabilities = DesiredCapabilities.firefox();
         }
+        else if ("firefox_clientperformance".equals(emulatedBrowser))
+        {
+            capabilities = DesiredCapabilities.firefox();
+            clientperformanceEnabled = true;
+        }
         else if ("chrome".equals(emulatedBrowser))
         {
             capabilities = DesiredCapabilities.chrome();
+        }
+        else if ("chrome_clientperformance".equals(emulatedBrowser))
+        {
+            capabilities = DesiredCapabilities.chrome();
+            clientperformanceEnabled = true;
         }
         else if ("internetexplorer".equals(emulatedBrowser))
         {
@@ -174,6 +185,7 @@ public class PropertiesToBrowserConfigurationMapper implements IMapper<Map<Strin
         r.setCapabilities(capabilities);
         r.setConfigTag(o.get("browserTag"));
         r.setName(o.get("name"));
+        r.setClientperformanceEnabled(clientperformanceEnabled);
 
         return r;
     }
