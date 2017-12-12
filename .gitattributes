@@ -1,0 +1,12 @@
+# IMPORTANT: Read http://timclem.wordpress.com/2012/03/01/mind-the-end-of-your-line/ before you consider messing with this file
+
+# Set all files matching the filter to be converted (CRLF to LF) if those files are determined by Git to be text and not binary. 
+# This relies on Git<92>s built in binary detection heuristics.
+* text=auto
+
+# Explicitly declare what should always be text files (with line feed normlization)
+*.java       text
+*.properties text
+*.md         text
+*.txt        text
+
