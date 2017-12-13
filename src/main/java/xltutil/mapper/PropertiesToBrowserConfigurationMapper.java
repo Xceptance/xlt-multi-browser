@@ -30,7 +30,7 @@ public class PropertiesToBrowserConfigurationMapper implements IMapper<Map<Strin
 
     private static final String TEST_ENVIRONMENT = "testEnvironment";
 
-    // appium specific propertys
+    // Appium specific properties
     private static final String APPIUM_VERSION = "appiumVersion";
 
     private static final String BROWSER_NAME = "browserName";
@@ -85,6 +85,20 @@ public class PropertiesToBrowserConfigurationMapper implements IMapper<Map<Strin
         else if ("internetexplorer".equals(emulatedBrowser))
         {
             capabilities = DesiredCapabilities.internetExplorer();
+        }
+        else if("edge".equals(emulatedBrowser))
+        {
+            capabilities = DesiredCapabilities.edge();
+        }
+        else if("opera".equals(emulatedBrowser))
+        {
+            capabilities = DesiredCapabilities.operaBlink();
+        }
+        else if("phantomjs".equals(emulatedBrowser))
+        {
+            @SuppressWarnings("deprecation")
+            final DesiredCapabilities phantomCaps =  DesiredCapabilities.phantomjs();
+            capabilities = phantomCaps;
         }
         else if ("safari".equals(emulatedBrowser))
         {

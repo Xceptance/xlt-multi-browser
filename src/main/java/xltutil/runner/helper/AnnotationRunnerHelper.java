@@ -1,12 +1,13 @@
 package xltutil.runner.helper;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
@@ -23,15 +24,23 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.firefox.FirefoxBinary;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.ie.InternetExplorerOptions;
+import org.openqa.selenium.opera.OperaDriver;
+import org.openqa.selenium.opera.OperaOptions;
+import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.CommandInfo;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.HttpCommandExecutor;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.safari.SafariDriver;
+import org.openqa.selenium.safari.SafariOptions;
 
 import com.xceptance.xlt.api.util.XltProperties;
 import com.xceptance.xlt.api.webdriver.XltChromeDriver;
@@ -46,20 +55,40 @@ import xltutil.proxy.ProxyHttpClient;
 
 public final class AnnotationRunnerHelper
 {
-    private static List<String> chromeBrowsers = new ArrayList<String>();
+    private static Set<String> chromeBrowsers = new HashSet<String>();
 
-    private static List<String> firefoxBrowsers = new ArrayList<String>();
+    private static Set<String> firefoxBrowsers = new HashSet<String>();
 
-    private static List<String> internetExplorerBrowsers = new ArrayList<String>();
+    private static Set<String> internetExplorerBrowsers = new HashSet<String>();
+
+    private static Set<String> operaBrowsers = new HashSet<>();
+
+    private static Set<String> safariBrowsers = new HashSet<>();
 
     static
     {
+        initBrowserTypes();
+    }
+
+    /**
+     * Initializes the sets of known browser types.
+     */
+    @SuppressWarnings("deprecation")
+    private static void initBrowserTypes()
+    {
         chromeBrowsers.add(BrowserType.ANDROID);
         chromeBrowsers.add(BrowserType.CHROME);
+        chromeBrowsers.add(BrowserType.GOOGLECHROME);
 
         firefoxBrowsers.add(BrowserType.FIREFOX);
         firefoxBrowsers.add(BrowserType.FIREFOX_CHROME);
         firefoxBrowsers.add(BrowserType.FIREFOX_PROXY);
+
+        operaBrowsers.add(BrowserType.OPERA);
+        operaBrowsers.add(BrowserType.OPERA_BLINK);
+
+        safariBrowsers.add(BrowserType.SAFARI);
+        safariBrowsers.add(BrowserType.SAFARI_PROXY);
 
         internetExplorerBrowsers.add(BrowserType.IE);
         internetExplorerBrowsers.add(BrowserType.IE_HTA);
@@ -79,7 +108,8 @@ public final class AnnotationRunnerHelper
      * @throws MalformedURLException
      */
     public static HttpCommandExecutor createGridExecutor(final ProxyConfigurationDto proxyConfig, final URL gridUrl, final String gridUsername,
-                                                         final String gridPassword) throws MalformedURLException
+                                                         final String gridPassword)
+        throws MalformedURLException
     {
         // create a configuration for accessing target site via proxy (if a proxy is defined)
         // the proxy and the destination site will have different or no credentials for accessing them
@@ -88,8 +118,8 @@ public final class AnnotationRunnerHelper
 
         // create credentials for proxy access
         if (proxyConfig != null //
-        && !StringUtils.isEmpty(proxyConfig.getUsername()) //
-        && !StringUtils.isEmpty(proxyConfig.getPassword()))
+            && !StringUtils.isEmpty(proxyConfig.getUsername()) //
+            && !StringUtils.isEmpty(proxyConfig.getPassword()))
         {
             final AuthScope proxyAuth = new AuthScope(proxyConfig.getHost(), Integer.valueOf(proxyConfig.getPort()));
             final Credentials proxyCredentials = new UsernamePasswordCredentials(proxyConfig.getUsername(), proxyConfig.getPassword());
@@ -112,7 +142,7 @@ public final class AnnotationRunnerHelper
             clientBuilder.setProxy(new HttpHost(proxyConfig.getHost(), Integer.valueOf(proxyConfig.getPort())));
         final CloseableHttpClient httpClient = clientBuilder.build();
 
-        final Map<String, CommandInfo> additionalCommands = new HashMap<String, CommandInfo>();   // just a dummy
+        final Map<String, CommandInfo> additionalCommands = new HashMap<String, CommandInfo>(); // just a dummy
 
         // this command executor will do the credential magic for us. both proxy and target site credentials
         return new HttpCommandExecutor(additionalCommands, gridUrl, new ProxyHttpClient(httpClient));
@@ -140,56 +170,40 @@ public final class AnnotationRunnerHelper
         final int configuredBrowserHeight = config.getBrowserHeight();
 
         Dimension browserSize = null;
-        // first check if the configured browserprofile has a defined size, else use the xlt default browser size
+        // first check if the configured browser profile has a defined size
         if (configuredBrowserWidth > 0 && configuredBrowserHeight > 0)
         {
             browserSize = new Dimension(configuredBrowserWidth, configuredBrowserHeight);
         }
+        // fall back to XLT default browser size if defined
         else if (windowWidth > 0 && windowHeight > 0)
         {
             browserSize = new Dimension(windowWidth, windowHeight);
         }
 
-        try
+        if (browserSize != null)
         {
-            driver.manage().window().setSize(browserSize);
-        }
-        catch (final UnsupportedCommandException e)
-        {
-            // same as the exception handling below
-            if (!e.getMessage().contains("not yet supported"))
-                throw e;
-        }
-        catch (final WebDriverException e)
-        {
-            // on saucelabs in some cases like iphone emulation you cant resize the browser.
-            // they throw an unchecked WebDriverException with the message "Not yet implemented"
-            // if we catch an exception we check the message. if another message is set we throw the exception else
-            // we suppress it
-            if (!e.getMessage().contains("Not yet implemented"))
-                throw e;
+            try
+            {
+                driver.manage().window().setSize(browserSize);
+            }
+            catch (final UnsupportedCommandException e)
+            {
+                // same as the exception handling below
+                if (!e.getMessage().contains("not yet supported"))
+                    throw e;
+            }
+            catch (final WebDriverException e)
+            {
+                // On SauceLabs in some cases like iPhone emulation you can't resize the browser but throw an unchecked
+                // WebDriverException with the message "Not yet implemented".
+                // Thus, we need to catch any WebDriverException and check its message.
+                if (!e.getMessage().contains("Not yet implemented"))
+                    throw e;
+            }
         }
     }
 
-    /**
-     * Creates a {@link FirefoxBinary} object and sets the path, but only if the path is not blank.
-     * 
-     * @param pathToBrowser
-     *            the path to the browser binary
-     * @return the Firefox binary
-     */
-    private static FirefoxBinary createFirefoxBinary(final String pathToBrowser)
-    {
-        if (StringUtils.isNotBlank(pathToBrowser))
-        {
-            return new FirefoxBinary(new File(pathToBrowser));
-        }
-        else
-        {
-            return new FirefoxBinary();
-        }
-    }
-    
     /**
      * Instantiate the {@link WebDriver} according to the configuration read from {@link TestTargets} annotations.
      *
@@ -228,38 +242,69 @@ public final class AnnotationRunnerHelper
             {
                 // do we have a custom path?
                 final String pathToBrowser = XltProperties.getInstance().getProperty(XltPropertyKey.CHROME_PATH);
+                final ChromeOptions options = new ChromeOptions();
+                options.merge(capabilities);
                 if (StringUtils.isNotBlank(pathToBrowser))
                 {
-                    final ChromeOptions options = new ChromeOptions();
                     options.setBinary(pathToBrowser);
-                    capabilities.setCapability(ChromeOptions.CAPABILITY, options);
                 }
-                
-                if(config.isClientperformanceEnabled())
+
+                if (config.isClientperformanceEnabled())
                 {
-                	return new XltChromeDriver(capabilities);
-                }else
+                    return new XltChromeDriver(options);
+                }
+                else
                 {
-                	return new ChromeDriver(capabilities);
+                    return new ChromeDriver(options);
                 }
             }
             else if (firefoxBrowsers.contains(browserName))
             {
+                final FirefoxOptions options = new FirefoxOptions(capabilities);
                 final String pathToBrowser = XltProperties.getInstance().getProperty(XltPropertyKey.FIREFOX_PATH);
-                final FirefoxBinary binary = createFirefoxBinary(pathToBrowser);
-                capabilities.setCapability(FirefoxDriver.BINARY, binary);
-                
-                if(config.isClientperformanceEnabled())
+                if (StringUtils.isNotBlank(pathToBrowser))
                 {
-                	return new XltFirefoxDriver(capabilities);
-                }else
+                    options.setBinary(pathToBrowser);
+                }
+
+                if (config.isClientperformanceEnabled())
                 {
-                	return new FirefoxDriver(capabilities);
+                    return new XltFirefoxDriver(options);
+                }
+                else
+                {
+                    return new FirefoxDriver(options);
                 }
             }
+            else if (operaBrowsers.contains(browserName))
+            {
+                final OperaOptions options = new OperaOptions();
+                options.merge(capabilities);
+                final String pathToBrowser = XltProperties.getInstance().getProperty(XltPropertyKey.OPERA_PATH);
+                if (StringUtils.isNotBlank(pathToBrowser))
+                {
+                    options.setBinary(pathToBrowser);
+                }
+                return new OperaDriver(options);
+            }
+            else if (safariBrowsers.contains(browserName))
+            {
+                return new SafariDriver(new SafariOptions(capabilities));
+            }
             else if (internetExplorerBrowsers.contains(browserName))
-            {            	
-                return new InternetExplorerDriver(capabilities);
+            {
+                return new InternetExplorerDriver(new InternetExplorerOptions(capabilities));
+            }
+            else if (BrowserType.EDGE.equals(browserName))
+            {
+                final EdgeOptions options = new EdgeOptions();
+                options.merge(capabilities);
+
+                return new EdgeDriver(options);
+            }
+            else if (BrowserType.PHANTOMJS.equals(browserName))
+            {
+                return new PhantomJSDriver(capabilities);
             }
         }
         else
@@ -267,7 +312,7 @@ public final class AnnotationRunnerHelper
             final XltProperties xltProperties = XltProperties.getInstance();
 
             final Map<String, String> propertiesForEnvironment = xltProperties.getPropertiesForKey(XltPropertyKey.BROWSERPROFILE_TEST_ENVIRONMENT +
-                                                                                             testEnvironment);
+                                                                                                   testEnvironment);
 
             final String gridUsername = propertiesForEnvironment.get("username");
             final String gridPassword = propertiesForEnvironment.get("password");

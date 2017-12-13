@@ -26,7 +26,13 @@ import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriverService;
+import org.openqa.selenium.edge.EdgeDriverService;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.GeckoDriverService;
+import org.openqa.selenium.ie.InternetExplorerDriverService;
+import org.openqa.selenium.opera.OperaDriverService;
+import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 
 import com.xceptance.xlt.api.data.DataSetProvider;
 import com.xceptance.xlt.api.data.DataSetProviderException;
@@ -207,25 +213,40 @@ public class AnnotationRunner extends XltTestRunner
         // parse browser properties
         final Map<String, BrowserConfigurationDto> parsedBrowserProperties = AnnotationRunnerHelper.parseBrowserProperties(xltProperties);
 
-        final String ieDriverPath = xltProperties.getProperty(XltPropertyKey.WEBDRIVER_PATH_IE, null);
-        final String chromeDriverPath = xltProperties.getProperty(XltPropertyKey.WEBDRIVER_PATH_CHROME, null);
-        final String geckoDriverPath = xltProperties.getProperty(XltPropertyKey.WEBDRIVER_PATH_FIREFOX, null);
+        final String ieDriverPath = xltProperties.getProperty(XltPropertyKey.WEBDRIVER_PATH_IE);
+        final String chromeDriverPath = xltProperties.getProperty(XltPropertyKey.WEBDRIVER_PATH_CHROME);
+        final String geckoDriverPath = xltProperties.getProperty(XltPropertyKey.WEBDRIVER_PATH_FIREFOX);
+        final String edgeDriverPath = xltProperties.getProperty(XltPropertyKey.WEBDRIVER_PATH_EDGE);
+        final String operaDriverPath = xltProperties.getProperty(XltPropertyKey.WEBDRIVER_PATH_OPERA);
+        final String phantomJSDriverPath = xltProperties.getProperty(XltPropertyKey.WEBDRIVER_PATH_PHANTOMJS);
 
-        // shall we run old school firefox?
+        // shall we run Firefox in legacy mode?
         final boolean firefoxLegacy = xltProperties.getProperty(XltPropertyKey.WEBDRIVER_FIREFOX_LEGACY, false);
         System.setProperty(FirefoxDriver.SystemProperty.DRIVER_USE_MARIONETTE, Boolean.toString(!firefoxLegacy));
 
         if (!StringUtils.isEmpty(ieDriverPath))
         {
-            System.setProperty("webdriver.ie.driver", ieDriverPath);
+            System.setProperty(InternetExplorerDriverService.IE_DRIVER_EXE_PROPERTY, ieDriverPath);
         }
         if (!StringUtils.isEmpty(chromeDriverPath))
         {
-            System.setProperty("webdriver.chrome.driver", chromeDriverPath);
+            System.setProperty(ChromeDriverService.CHROME_DRIVER_EXE_PROPERTY, chromeDriverPath);
         }
         if (!StringUtils.isEmpty(geckoDriverPath))
         {
-            System.setProperty("webdriver.gecko.driver", geckoDriverPath);
+            System.setProperty(GeckoDriverService.GECKO_DRIVER_EXE_PROPERTY, geckoDriverPath);
+        }
+        if (!StringUtils.isEmpty(edgeDriverPath))
+        {
+            System.setProperty(EdgeDriverService.EDGE_DRIVER_EXE_PROPERTY, edgeDriverPath);
+        }
+        if (!StringUtils.isEmpty(operaDriverPath))
+        {
+            System.setProperty(OperaDriverService.OPERA_DRIVER_EXE_PROPERTY, operaDriverPath);
+        }
+        if (!StringUtils.isEmpty(phantomJSDriverPath))
+        {
+            System.setProperty(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSDriverPath);
         }
         boolean foundTargetsAnnotation = false;
 
@@ -279,8 +300,7 @@ public class AnnotationRunner extends XltTestRunner
                         // create the JUnit children
                         if (dataSets == null || dataSets.isEmpty())
                         {
-                            methods.add(new AnnotatedFrameworkMethod(frameworkMethod.getMethod(), testMethodName, foundBrowserConfiguration,
-                                                                     -1, EMPTY_DATA_SET));
+                            methods.add(new AnnotatedFrameworkMethod(frameworkMethod.getMethod(), testMethodName, foundBrowserConfiguration, -1, EMPTY_DATA_SET));
                         }
                         else
                         {
@@ -288,8 +308,7 @@ public class AnnotationRunner extends XltTestRunner
                             int i = 0;
                             for (final Map<String, String> dataSet : dataSets)
                             {
-                                methods.add(new AnnotatedFrameworkMethod(frameworkMethod.getMethod(), testMethodName,
-                                                                         foundBrowserConfiguration, i++, dataSet));
+                                methods.add(new AnnotatedFrameworkMethod(frameworkMethod.getMethod(), testMethodName, foundBrowserConfiguration, i++, dataSet));
                             }
                         }
                     }
@@ -495,31 +514,32 @@ public class AnnotationRunner extends XltTestRunner
         // look for a data set file in the class path
         for (final String fileName : fileNames)
         {
-            final InputStream input = testClass.getResourceAsStream("/" + fileName);
-            if (input != null)
+            try (final InputStream input = testClass.getResourceAsStream("/" + fileName))
             {
-                OutputStream output = null;
-                File batchDataFile = null;
-
-                try
+                if (input != null)
                 {
-                    // copy the stream to a temporary file
-                    final String extension = "." + FilenameUtils.getExtension(fileName);
-                    batchDataFile = File.createTempFile("dataSets_", extension);
-                    output = new FileOutputStream(batchDataFile);
+                    File batchDataFile = null;
 
-                    IOUtils.copy(input, output);
-                    output.flush();
+                    try
+                    {
+                        // copy the stream to a temporary file
+                        final String extension = "." + FilenameUtils.getExtension(fileName);
+                        batchDataFile = File.createTempFile("dataSets_", extension);
+                        try (final OutputStream output = new FileOutputStream(batchDataFile))
+                        {
 
-                    // read the data sets from the temporary file
-                    return readDataSets(batchDataFile);
-                }
-                finally
-                {
-                    // clean up
-                    IOUtils.closeQuietly(input);
-                    IOUtils.closeQuietly(output);
-                    FileUtils.deleteQuietly(batchDataFile);
+                            IOUtils.copy(input, output);
+                            output.flush();
+
+                            // read the data sets from the temporary file
+                            return readDataSets(batchDataFile);
+                        }
+                    }
+                    finally
+                    {
+                        // clean up
+                        FileUtils.deleteQuietly(batchDataFile);
+                    }
                 }
             }
         }

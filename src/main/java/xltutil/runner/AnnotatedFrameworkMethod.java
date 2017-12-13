@@ -41,7 +41,7 @@ public class AnnotatedFrameworkMethod extends FrameworkMethod
      *            the test data set
      */
     public AnnotatedFrameworkMethod(final Method method, final String testMethodName, final BrowserConfigurationDto browserConfiguration,
-                                    final int index, final Map<String, String> dataSet)
+        final int index, final Map<String, String> dataSet)
     {
         super(method);
 

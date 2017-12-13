@@ -7,74 +7,89 @@ import org.openqa.selenium.remote.DesiredCapabilities;
  * 
  * @author m.kaufmann
  */
-public class BrowserConfigurationDto {
-	private String browserTag;
+public class BrowserConfigurationDto
+{
+    private String browserTag;
 
-	private String name;
+    private String name;
 
-	private DesiredCapabilities capabilities;
+    private DesiredCapabilities capabilities;
 
-	private String testEnvironment;
+    private String testEnvironment;
 
-	private int browserWidth;
+    private int browserWidth;
 
-	private int browserHeight;
+    private int browserHeight;
 
-	private boolean clientperformanceEnabled;
+    private boolean clientperformanceEnabled;
 
-	public String getConfigTag() {
-		return browserTag;
-	}
+    public String getConfigTag()
+    {
+        return browserTag;
+    }
 
-	public void setConfigTag(String configTag) {
-		this.browserTag = configTag;
-	}
+    public void setConfigTag(String configTag)
+    {
+        this.browserTag = configTag;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getName()
+    {
+        return name;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public void setName(String name)
+    {
+        this.name = name;
+    }
 
-	public DesiredCapabilities getCapabilities() {
-		return capabilities;
-	}
+    public DesiredCapabilities getCapabilities()
+    {
+        return capabilities;
+    }
 
-	public void setCapabilities(DesiredCapabilities capabilities) {
-		this.capabilities = capabilities;
-	}
+    public void setCapabilities(DesiredCapabilities capabilities)
+    {
+        this.capabilities = capabilities;
+    }
 
-	public String getTestEnvironment() {
-		return testEnvironment;
-	}
+    public String getTestEnvironment()
+    {
+        return testEnvironment;
+    }
 
-	public void setTestEnvironment(String testEnvironment) {
-		this.testEnvironment = testEnvironment;
-	}
+    public void setTestEnvironment(String testEnvironment)
+    {
+        this.testEnvironment = testEnvironment;
+    }
 
-	public int getBrowserWidth() {
-		return browserWidth;
-	}
+    public int getBrowserWidth()
+    {
+        return browserWidth;
+    }
 
-	public void setBrowserWidth(int browserWidth) {
-		this.browserWidth = browserWidth;
-	}
+    public void setBrowserWidth(int browserWidth)
+    {
+        this.browserWidth = browserWidth;
+    }
 
-	public int getBrowserHeight() {
-		return browserHeight;
-	}
+    public int getBrowserHeight()
+    {
+        return browserHeight;
+    }
 
-	public void setBrowserHeight(int browserHeight) {
-		this.browserHeight = browserHeight;
-	}
+    public void setBrowserHeight(int browserHeight)
+    {
+        this.browserHeight = browserHeight;
+    }
 
-	public boolean isClientperformanceEnabled() {
-		return clientperformanceEnabled;
-	}
+    public boolean isClientperformanceEnabled()
+    {
+        return clientperformanceEnabled;
+    }
 
-	public void setClientperformanceEnabled(boolean clientperformanceEnabled) {
-		this.clientperformanceEnabled = clientperformanceEnabled;
-	}
+    public void setClientperformanceEnabled(boolean clientperformanceEnabled)
+    {
+        this.clientperformanceEnabled = clientperformanceEnabled;
+    }
 }
