@@ -8,13 +8,11 @@ import java.lang.annotation.Target;
 import xltutil.AbstractAnnotatedScriptTestCase;
 
 /**
- * This annotation is used in context of XLT script test cases.
+ * This annotation is used in context of XLT test cases to add one or more browser configurations.
  * <p>
  * Annotate a class that extends {@link AbstractAnnotatedScriptTestCase} with {@link TestTargets} and add as annotation
- * value a list of test targets. These targets refer to browserprofiles (browsertag) that are configured in
- * browser.properties located in config folder.
- * 
- * @author m.kaufmann
+ * value a list of test targets. These targets refer to the browser profiles (browser-tag) as configured in
+ * &quot;browser.properties&quot; located in sub-directory &quot;config&quot; of your test suite.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

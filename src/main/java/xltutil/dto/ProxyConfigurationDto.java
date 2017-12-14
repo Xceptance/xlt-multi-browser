@@ -1,5 +1,8 @@
 package xltutil.dto;
 
+/**
+ * POJO class to hold proxy configurations.
+ */
 public class ProxyConfigurationDto
 {
     private String host;

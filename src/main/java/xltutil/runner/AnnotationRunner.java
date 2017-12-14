@@ -16,6 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -26,6 +27,7 @@ import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.edge.EdgeDriverService;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -54,11 +56,10 @@ import xltutil.runner.helper.AnnotationRunnerHelper;
 import xltutil.runner.helper.XltPropertyKey;
 
 /**
- * JUnit runner used to run testcases that inherit from {@link AbstractAnnotatedScriptTestCase}. This class reads the
- * annotation based configuration of {@link RunWithBrowser} and executes the testcase multiple-times with different
- * configurations.
+ * JUnit runner used to run tests that inherit from {@link AbstractAnnotatedScriptTestCase}. This class reads the
+ * annotation based configuration of {@link RunWithBrowser} and executes the annotated test class multiple-times with
+ * different configurations.
  * 
- * @author m.kaufmann
  * @see {@link AbstractAnnotatedScriptTestCase}, {@link RunWithBrowser}
  */
 public class AnnotationRunner extends XltTestRunner
@@ -121,9 +122,12 @@ public class AnnotationRunner extends XltTestRunner
     private final List<FrameworkMethod> methods = new ArrayList<FrameworkMethod>();
 
     /**
-     * The instance of the test class for current test method.
+     * The instances of the test case mapped by test method.
+     * <p>
+     * N.B.: Mapping is necessary as multiple threads might access this runner instance, e.g. when running JUnit tests
+     * in parallel.
      */
-    private Object testInstance;
+    private final Map<FrameworkMethod, Object> _testInstances = new ConcurrentHashMap<>();
 
     /**
      * Sets the test instance up.
@@ -135,10 +139,11 @@ public class AnnotationRunner extends XltTestRunner
      */
     protected void setUpTest(final FrameworkMethod method, final Object test)
     {
-        if (test instanceof AbstractWebDriverTestCase)
+        if (test instanceof AbstractWebDriverTestCase && method instanceof AnnotatedFrameworkMethod)
         {
             // set the test data set at the test instance
             final AnnotatedFrameworkMethod frameworkMethod = (AnnotatedFrameworkMethod) method;
+            final AbstractWebDriverTestCase testInstance = (AbstractWebDriverTestCase) test;
 
             // get the browser configuration for this testcase
             final BrowserConfigurationDto config = frameworkMethod.getBrowserConfiguration();
@@ -158,10 +163,11 @@ public class AnnotationRunner extends XltTestRunner
             {
                 // set browser window size
                 AnnotationRunnerHelper.setBrowserWindowSize(config, driver);
-                ((AbstractWebDriverTestCase) test).setWebDriver(driver);
-                ((AbstractWebDriverTestCase) test).setTestDataSet(frameworkMethod.getDataSet());
+                testInstance.setWebDriver(driver);
+                testInstance.setTestDataSet(frameworkMethod.getDataSet());
 
-                testInstance = test;
+                _testInstances.put(frameworkMethod, testInstance);
+
             }
             else
             {
@@ -181,9 +187,22 @@ public class AnnotationRunner extends XltTestRunner
     {
         if (test instanceof AbstractWebDriverTestCase)
         {
-            ((AbstractWebDriverTestCase) test).getWebDriver().quit();
+            final WebDriver webDriver = ((AbstractWebDriverTestCase) test).getWebDriver();
+            if (webDriver != null)
+            {
+                try
+                {
+                    webDriver.getWindowHandle();
+                }
+                catch (final WebDriverException e)
+                {
+                    // WebDriver might already be closed
+                    // eat exception and return
+                    return;
+                }
 
-            testInstance = null;
+                webDriver.quit();
+            }
         }
     }
 
@@ -381,7 +400,7 @@ public class AnnotationRunner extends XltTestRunner
                 finally
                 {
                     // quit browser
-                    tearDownTest(testInstance);
+                    tearDownTest(_testInstances.remove(method)); // get test instance and remove it
                 }
             }
         };

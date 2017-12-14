@@ -10,8 +10,10 @@ import xltutil.runner.AnnotationRunner;
 
 /**
  * Specialization of {@link AbstractWebDriverScriptTestCase} that adds the ability to run a test case multiple times
- * using the specified browser configurations. To use this functionality, let your test classes inherit from this class
- * instead of {@link AbstractWebDriverScriptTestCase} and add a {@link TestTargets} annotation to your test classes.
+ * using the specified browser configurations.
+ * <p>
+ * To use this functionality, let your test classes inherit from this class instead of
+ * {@link AbstractWebDriverScriptTestCase} and add a {@link TestTargets} annotation to your test classes.
  */
 @RunWith(AnnotationRunner.class)
 public abstract class AbstractAnnotatedWebDriverScriptTestCase extends AbstractWebDriverScriptTestCase

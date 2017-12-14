@@ -8,13 +8,10 @@ import xltutil.annotation.TestTargets;
 import xltutil.runner.AnnotationRunner;
 
 /**
- * This is a wrapper-class designed to run XLT-testcases. To use this class you simply inherit from this and add
- * {@link TestTargets} annotation that contains a list of {@link RunWithBrowser} annotations. Within this annotations
- * you can specify in what browser environment your testcase should be executed. You are able to specify the browser,
- * browserversion, operating system and the scope (remote at SauceLabs or local). Furthermore you can define a own for
- * every scenario to distinguish your testcases from each other.
- * 
- * @author m.kaufmann
+ * Specialization of {@link AbstractScriptTestCase} that adds the ability to run a test case multiple times using the
+ * specified browser configurations.
+ * <p>
+ * To use this class you simply inherit from this and add a {@link TestTargets} annotation.
  */
 @RunWith(AnnotationRunner.class)
 public abstract class AbstractAnnotatedScriptTestCase extends AbstractScriptTestCase

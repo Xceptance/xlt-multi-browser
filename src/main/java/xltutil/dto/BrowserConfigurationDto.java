@@ -4,8 +4,6 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 
 /**
  * POJO class to hold browser configurations
- * 
- * @author m.kaufmann
  */
 public class BrowserConfigurationDto
 {
