@@ -1,5 +1,6 @@
 package xltutil.runner.helper;
 
+import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -414,4 +415,35 @@ public final class AnnotationRunnerHelper
 
         return effectiveKey;
     }
+
+    /**
+     * Returns a list of found {@link TestTargets} annotations for the first annotated class in class hierarchy starting
+     * with the given class.
+     * 
+     * @param clazz
+     *            the class to start inspection at
+     * @return list of found {@link TestTargets} annotations for the 1st found class that has such an annotation
+     */
+    public static List<TestTargets> getTestTargets(Class<?> clazz)
+    {
+        final ArrayList<TestTargets> foundAnnotations = new ArrayList<>();
+
+        while (clazz != null && foundAnnotations.isEmpty())
+        {
+            Annotation[] annos = clazz.getDeclaredAnnotations();
+            if (annos != null && annos.length > 0)
+            {
+                for (final Annotation anno : annos)
+                {
+                    if (anno instanceof TestTargets)
+                    {
+                        foundAnnotations.add((TestTargets) anno);
+                    }
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return foundAnnotations;
+    }
+
 }

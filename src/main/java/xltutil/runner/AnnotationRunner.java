@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -284,60 +283,54 @@ public class AnnotationRunner extends XltTestRunner
         }
 
         // Get annotations of test class.
-        final Annotation[] annotations = testCaseClass.getAnnotations();
-        for (final Annotation annotation : annotations)
+        for (final TestTargets annotation : AnnotationRunnerHelper.getTestTargets(testCaseClass))
         {
-            // only check TestTargets annotation with a list of nested TestTarget annotations
-            if (annotation instanceof TestTargets)
+            foundTargetsAnnotation = true;
+
+            for (final String target : annotation.value())
             {
-                foundTargetsAnnotation = true;
-
-                final String[] targets = ((TestTargets) annotation).value();
-
-                for (final String target : targets)
+                // check if the annotated target is in the list of targets specified via system property
+                if (browserDefinitions != null && !browserDefinitions.contains(target))
                 {
-                    // check if the annotated target is in the list of targets specified via system property
-                    if (browserDefinitions != null && !browserDefinitions.contains(target))
+                    continue;
+                }
+
+                final BrowserConfigurationDto foundBrowserConfiguration = parsedBrowserProperties.get(target);
+                if (foundBrowserConfiguration == null)
+                {
+                    throw new IllegalArgumentException("Can not find browser configuration with tag: " + target);
+                }
+
+                for (final FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(Test.class))
+                {
+                    // get the test method to run
+                    final Method testMethod = frameworkMethod.getMethod();
+
+                    // check whether to override the test method name
+                    final String testMethodName = (defaultTestMethodName == null) ? testMethod.getName() : defaultTestMethodName;
+
+                    // create the JUnit children
+                    if (dataSets == null || dataSets.isEmpty())
                     {
-                        continue;
+                        methods.add(new AnnotatedFrameworkMethod(frameworkMethod.getMethod(), testMethodName, foundBrowserConfiguration, -1, EMPTY_DATA_SET));
                     }
-
-                    final BrowserConfigurationDto foundBrowserConfiguration = parsedBrowserProperties.get(target);
-                    if (foundBrowserConfiguration == null)
+                    else
                     {
-                        throw new IllegalArgumentException("Can not find browser configuration with tag: " + target);
-                    }
-
-                    for (final FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(Test.class))
-                    {
-                        // get the test method to run
-                        final Method testMethod = frameworkMethod.getMethod();
-
-                        // check whether to override the test method name
-                        final String testMethodName = (defaultTestMethodName == null) ? testMethod.getName() : defaultTestMethodName;
-
-                        // create the JUnit children
-                        if (dataSets == null || dataSets.isEmpty())
+                        // run the method once for each data set
+                        int i = 0;
+                        for (final Map<String, String> dataSet : dataSets)
                         {
-                            methods.add(new AnnotatedFrameworkMethod(frameworkMethod.getMethod(), testMethodName, foundBrowserConfiguration, -1, EMPTY_DATA_SET));
-                        }
-                        else
-                        {
-                            // run the method once for each data set
-                            int i = 0;
-                            for (final Map<String, String> dataSet : dataSets)
-                            {
-                                methods.add(new AnnotatedFrameworkMethod(frameworkMethod.getMethod(), testMethodName, foundBrowserConfiguration, i++, dataSet));
-                            }
+                            methods.add(new AnnotatedFrameworkMethod(frameworkMethod.getMethod(), testMethodName, foundBrowserConfiguration, i++, dataSet));
                         }
                     }
                 }
             }
+
         }
 
         if (!foundTargetsAnnotation)
-            throw new IllegalArgumentException("The class (" + testCaseClass.getSimpleName()
-                                               + ") does not have a required TestTargets annotation.");
+            throw new IllegalArgumentException("Could not find any '@TestTargets' annotation in class '" + testCaseClass.getCanonicalName()
+                                               + "' or one of its super classes.");
     }
 
     /**

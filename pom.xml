@@ -44,7 +44,7 @@
 
     <repositories>
         <repository>
-            <id>xceptance-releases</id>
+            <id>xceptance-public</id>
             <url>https://lab.xceptance.de/nexus/content/groups/public/</url>
         </repository>
     </repositories>
