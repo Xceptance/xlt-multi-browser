@@ -246,6 +246,12 @@ public final class AnnotationRunnerHelper
                 final String pathToBrowser = XltProperties.getInstance().getProperty(XltPropertyKey.CHROME_PATH);
                 final ChromeOptions options = new ChromeOptions();
 
+                // This is a workaround for a changed Selenium behavior
+                // Since device emulation is not part of the "standard" it now has to be considered as experimental option.
+                // The capability class already sorts the different configurations in different maps (one for capabilities and one for
+                // experimental capabilities). The experimental options are held internal within a map of the capability map and
+                // are accessible with key "goog:chromeOptions" (constant ChromeOptions.CAPABILITY). So all we have to do is to copy the
+                // keys and values of that special map and set it as experimental option inside ChromeOptions.
                 Map<String, String> experimentalOptions = null;
                 try
                 {
