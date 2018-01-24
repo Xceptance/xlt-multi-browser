@@ -301,13 +301,25 @@ public class AnnotationRunner extends XltTestRunner
                     throw new IllegalArgumentException("Can not find browser configuration with tag: " + target);
                 }
 
-                for (final FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(Test.class))
+                List<FrameworkMethod> testMethods = getTestClass().getAnnotatedMethods(Test.class);
+                for (final FrameworkMethod frameworkMethod : testMethods)
                 {
                     // get the test method to run
                     final Method testMethod = frameworkMethod.getMethod();
 
                     // check whether to override the test method name
-                    final String testMethodName = (defaultTestMethodName == null) ? testMethod.getName() : defaultTestMethodName;
+                    // if we have more then one test method inside the test class we need to use the methods name because it causes the
+                    // JUnit result to have unique name else we can use the default name which is in this case the class name. This is
+                    // necessary since the name must be unique to generate a correct report afterwards.
+                    final String testMethodName;
+                    if (testMethods.size() > 1)
+                    {
+                        testMethodName = testMethod.getName();
+                    }
+                    else
+                    {
+                        testMethodName = (defaultTestMethodName == null) ? testMethod.getName() : defaultTestMethodName;
+                    }
 
                     // create the JUnit children
                     if (dataSets == null || dataSets.isEmpty())
