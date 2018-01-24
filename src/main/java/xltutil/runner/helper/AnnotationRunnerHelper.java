@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -244,6 +245,33 @@ public final class AnnotationRunnerHelper
                 // do we have a custom path?
                 final String pathToBrowser = XltProperties.getInstance().getProperty(XltPropertyKey.CHROME_PATH);
                 final ChromeOptions options = new ChromeOptions();
+
+                // This is a workaround for a changed Selenium behavior
+                // Since device emulation is not part of the "standard" it now has to be considered as experimental option.
+                // The capability class already sorts the different configurations in different maps (one for capabilities and one for
+                // experimental capabilities). The experimental options are held internal within a map of the capability map and
+                // are accessible with key "goog:chromeOptions" (constant ChromeOptions.CAPABILITY). So all we have to do is to copy the
+                // keys and values of that special map and set it as experimental option inside ChromeOptions.
+                Map<String, String> experimentalOptions = null;
+                try
+                {
+                    experimentalOptions = (Map<String, String>) capabilities.getCapability(ChromeOptions.CAPABILITY);
+                    if (experimentalOptions != null)
+                    {
+                        for (Entry<String, String> entry : experimentalOptions.entrySet())
+                        {
+                            options.setExperimentalOption(entry.getKey(), entry.getValue());
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    // unsure which case this can cover since only the type conversion can fail
+                    // lets throw it as unchecked exception
+                    // in case that makes no sense at all then just suppress it
+                    throw new RuntimeException(e);
+                }
+
                 options.merge(capabilities);
                 if (StringUtils.isNotBlank(pathToBrowser))
                 {
