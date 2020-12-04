@@ -34,7 +34,6 @@ import org.openqa.selenium.ie.InternetExplorerDriver;
 import org.openqa.selenium.ie.InternetExplorerOptions;
 import org.openqa.selenium.opera.OperaDriver;
 import org.openqa.selenium.opera.OperaOptions;
-import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.CommandInfo;
@@ -247,10 +246,14 @@ public final class AnnotationRunnerHelper
                 final ChromeOptions options = new ChromeOptions();
 
                 // This is a workaround for a changed Selenium behavior
-                // Since device emulation is not part of the "standard" it now has to be considered as experimental option.
-                // The capability class already sorts the different configurations in different maps (one for capabilities and one for
-                // experimental capabilities). The experimental options are held internal within a map of the capability map and
-                // are accessible with key "goog:chromeOptions" (constant ChromeOptions.CAPABILITY). So all we have to do is to copy the
+                // Since device emulation is not part of the "standard" it now has to be considered as experimental
+                // option.
+                // The capability class already sorts the different configurations in different maps (one for
+                // capabilities and one for
+                // experimental capabilities). The experimental options are held internal within a map of the capability
+                // map and
+                // are accessible with key "goog:chromeOptions" (constant ChromeOptions.CAPABILITY). So all we have to
+                // do is to copy the
                 // keys and values of that special map and set it as experimental option inside ChromeOptions.
                 Map<String, String> experimentalOptions = null;
                 try
@@ -331,10 +334,9 @@ public final class AnnotationRunnerHelper
 
                 return new EdgeDriver(options);
             }
-            else if (BrowserType.PHANTOMJS.equals(browserName))
-            {
-                return new PhantomJSDriver(capabilities);
-            }
+            /*
+             * else if (BrowserType.PHANTOMJS.equals(browserName)) { return new PhantomJSDriver(capabilities); }
+             */
         }
         else
         {

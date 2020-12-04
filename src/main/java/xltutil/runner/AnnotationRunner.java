@@ -33,7 +33,6 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.GeckoDriverService;
 import org.openqa.selenium.ie.InternetExplorerDriverService;
 import org.openqa.selenium.opera.OperaDriverService;
-import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 
 import com.xceptance.xlt.api.data.DataSetProvider;
 import com.xceptance.xlt.api.data.DataSetProviderException;
@@ -262,10 +261,10 @@ public class AnnotationRunner extends XltTestRunner
         {
             System.setProperty(OperaDriverService.OPERA_DRIVER_EXE_PROPERTY, operaDriverPath);
         }
-        if (!StringUtils.isEmpty(phantomJSDriverPath))
-        {
-            System.setProperty(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSDriverPath);
-        }
+        /*
+         * if (!StringUtils.isEmpty(phantomJSDriverPath)) {
+         * System.setProperty(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSDriverPath); }
+         */
         boolean foundTargetsAnnotation = false;
 
         // get test specific browser definitions (aka browser tag see browser.properties)
