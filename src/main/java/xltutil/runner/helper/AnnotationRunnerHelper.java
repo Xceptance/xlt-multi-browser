@@ -1,6 +1,8 @@
 package xltutil.runner.helper;
 
+import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -10,15 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.UnsupportedCommandException;
@@ -40,6 +40,7 @@ import org.openqa.selenium.remote.CommandInfo;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.HttpCommandExecutor;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.remote.internal.OkHttpClient;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
 
@@ -48,6 +49,10 @@ import com.xceptance.xlt.api.webdriver.XltChromeDriver;
 import com.xceptance.xlt.api.webdriver.XltFirefoxDriver;
 import com.xceptance.xlt.engine.SessionImpl;
 
+import okhttp3.Authenticator;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.Route;
 import xltutil.annotation.TestTargets;
 import xltutil.dto.BrowserConfigurationDto;
 import xltutil.dto.ProxyConfigurationDto;
@@ -136,17 +141,34 @@ public final class AnnotationRunnerHelper
             basicCredentialsProvider.setCredentials(gridAuth, gridCredentials);
         }
 
+        Authenticator proxyAuthenticator = new Authenticator()
+        {
+            @Override
+            public Request authenticate(Route route, Response response) throws IOException
+            {
+                AuthScope scope = new AuthScope(route.socketAddress().getHostName(), route.socketAddress().getPort());
+                return response.request().newBuilder()
+                               .header("Proxy-Authorization", basicCredentialsProvider.getCredentials(scope).toString())
+                               .build();
+            }
+        };
+
         // now create a http client, set the custom proxy and inject the credentials
-        final HttpClientBuilder clientBuilder = HttpClientBuilder.create();
-        clientBuilder.setDefaultCredentialsProvider(basicCredentialsProvider);
+        final okhttp3.OkHttpClient.Builder clientBuilder = new okhttp3.OkHttpClient.Builder()
+                                                                                             .connectTimeout(60, TimeUnit.SECONDS)
+                                                                                             .writeTimeout(60, TimeUnit.SECONDS)
+                                                                                             .readTimeout(60, TimeUnit.SECONDS);
         if (proxyConfig != null)
-            clientBuilder.setProxy(new HttpHost(proxyConfig.getHost(), Integer.valueOf(proxyConfig.getPort())));
-        final CloseableHttpClient httpClient = clientBuilder.build();
+        {
+            clientBuilder.proxy(new java.net.Proxy(java.net.Proxy.Type.HTTP, new InetSocketAddress(proxyConfig.getHost(), Integer.valueOf(proxyConfig.getPort()))))
+                         .proxyAuthenticator(proxyAuthenticator);
+
+        }
 
         final Map<String, CommandInfo> additionalCommands = new HashMap<String, CommandInfo>(); // just a dummy
 
         // this command executor will do the credential magic for us. both proxy and target site credentials
-        return new HttpCommandExecutor(additionalCommands, gridUrl, new ProxyHttpClient(httpClient));
+        return new HttpCommandExecutor(additionalCommands, gridUrl, new ProxyHttpClient(new OkHttpClient(clientBuilder.build(), gridUrl)));
 
     }
 
