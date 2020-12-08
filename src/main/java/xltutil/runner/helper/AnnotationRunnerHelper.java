@@ -334,9 +334,6 @@ public final class AnnotationRunnerHelper
 
                 return new EdgeDriver(options);
             }
-            /*
-             * else if (BrowserType.PHANTOMJS.equals(browserName)) { return new PhantomJSDriver(capabilities); }
-             */
         }
         else
         {
